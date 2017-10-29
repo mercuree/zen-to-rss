@@ -1,0 +1,6 @@
+{
+  "name": "Zen to rss converter",
+  "description": "Converts Yandex zen blog entries to rss feed",
+  "repository": "https://github.com/mercuree/zen-to-rss.git",
+  "keywords": ["yandex", "zen", "python", "rss", "telegram"]
+}
