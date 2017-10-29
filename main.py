@@ -7,6 +7,8 @@ from flask import Response
 from flask import abort
 from datetime import datetime
 from datetime import timezone
+from urllib.parse import urlparse
+import re
 from feedgen.feed import FeedGenerator
 from lxml.html import fromstring
 import json
@@ -18,7 +20,7 @@ app = Flask(__name__)
 
 IMAGE_URL = 'https://avatars.mds.yandex.net/get-{namespace}/{groupId}/{imageName}/orig'
 
-ENTRY_URL = 'https://zen.yandex.ru/media/id/{publisherId}/{titleForUrl}-{id}'
+ENTRY_URL = 'https://zen.yandex.ru/media/{publisherId}/{titleForUrl}-{id}'
 
 
 @app.route('/')
@@ -29,6 +31,15 @@ def main_page():
 @app.route('/zenrss', methods=['GET'])
 def get_rss():
     zen_url = request.args.get('url')
+
+    parsed_url = urlparse(zen_url)
+
+    if parsed_url.netloc != 'zen.yandex.ru':
+        return 'Domain must be zen.yandex.ru'
+    if not re.match(r'^/media/(id/[\da-f]+|[a-z\d_]+)$', parsed_url.path):
+        return 'Url is unsupported. Supported formats:<br>' \
+               '• https://zen.yandex.ru/media/id/01234567890abcdef0123456 <br>' \
+               '• https://zen.yandex.ru/media/nickname'
 
     resp = requests.get(zen_url, headers={
         'User-Agent': 'TelegramBot (like TwitterBot)'
@@ -88,9 +99,10 @@ def get_rss():
             type='image/%s' % item_image['meta']['origFormat'].lower(),
             length='2048'
         )
-
+        # set /media/<nickname> if available, otherwise set /media/id/<uid>
+        publisher_identity = publisher['nickname'].get('normalized') if 'nickname' in publisher else "id/" + item.get('publisherId')
         entry_url = ENTRY_URL.format(
-            publisherId=item.get('publisherId'),
+            publisherId=publisher_identity,
             titleForUrl=item.get('titleForUrl'),
             id=item.get('id')
         )
