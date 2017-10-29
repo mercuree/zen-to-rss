@@ -30,7 +30,9 @@ def main_page():
 def get_rss():
     zen_url = request.args.get('url')
 
-    resp = requests.get(zen_url)
+    resp = requests.get(zen_url, headers={
+        'User-Agent': 'TelegramBot (like TwitterBot)'
+    })
     doc = fromstring(resp.text)
 
     try:
