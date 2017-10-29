@@ -115,6 +115,8 @@ def get_rss():
         )
         # convert to instant view link if tg hash is provided
         if tg_rhash:
+            # write original url into author field
+            entry.author({'name': '', 'email': entry_url})
             entry_url = TG_URL.format(url=quote_plus(entry_url), rhash=tg_rhash)
 
         entry.link(
