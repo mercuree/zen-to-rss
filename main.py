@@ -8,6 +8,7 @@ from flask import abort
 from datetime import datetime
 from datetime import timezone
 from urllib.parse import urlparse
+from urllib.parse import quote_plus
 import re
 from feedgen.feed import FeedGenerator
 from lxml.html import fromstring
@@ -22,6 +23,8 @@ IMAGE_URL = 'https://avatars.mds.yandex.net/get-{namespace}/{groupId}/{imageName
 
 ENTRY_URL = 'https://zen.yandex.ru/media/{publisherId}/{titleForUrl}-{id}'
 
+TG_URL = 'http://t.me/iv?url={url}&rhash={rhash}'
+
 
 @app.route('/')
 def main_page():
@@ -31,11 +34,14 @@ def main_page():
 @app.route('/zenrss', methods=['GET'])
 def get_rss():
     zen_url = request.args.get('url')
+    # set telegram instant view rhash if available
+    tg_rhash = request.args.get('tg_rhash')
 
     parsed_url = urlparse(zen_url)
 
     if parsed_url.netloc != 'zen.yandex.ru':
         return 'Domain must be zen.yandex.ru'
+
     if not re.match(r'^/media/(id/[\da-f]+|[a-z\d_]+)$', parsed_url.path):
         return 'Url is unsupported. Supported formats:<br>' \
                '• https://zen.yandex.ru/media/id/01234567890abcdef0123456 <br>' \
@@ -99,6 +105,7 @@ def get_rss():
             type='image/%s' % item_image['meta']['origFormat'].lower(),
             length='2048'
         )
+
         # set /media/<nickname> if available, otherwise set /media/id/<uid>
         publisher_identity = publisher['nickname'].get('normalized') if 'nickname' in publisher else "id/" + item.get('publisherId')
         entry_url = ENTRY_URL.format(
@@ -106,6 +113,9 @@ def get_rss():
             titleForUrl=item.get('titleForUrl'),
             id=item.get('id')
         )
+        # convert to instant view link if tg hash is provided
+        if tg_rhash:
+            entry_url = TG_URL.format(url=quote_plus(entry_url), rhash=tg_rhash)
 
         entry.link(
             {'href': entry_url}
