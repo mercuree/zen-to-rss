@@ -1,0 +1,6 @@
+feedgen
+Flask
+gunicorn
+lxml
+requests
+requests-cache
