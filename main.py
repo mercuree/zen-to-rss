@@ -131,7 +131,7 @@ def get_rss():
             entry.link({'href': entry_url})
 
         entry.pubdate(
-            datetime.fromtimestamp(item['content'].get('modTime') / 1000, tz=timezone.utc)
+            datetime.fromtimestamp(item['content'].get('modTime') / 1000).astimezone()
         )
 
     rss_response = Response(feed.rss_str(pretty=True))
