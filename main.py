@@ -37,8 +37,11 @@ def get_rss():
     # set telegram instant view rhash if available
     tg_rhash = request.args.get('tg_rhash')
 
-    parsed_url = urlparse(zen_url)
+    limit_description = request.args.get('limit_description', type=int)
 
+    if not zen_url:
+        return 'url (?url=https://zen.yandex.ru/media/.../) must be set'
+    parsed_url = urlparse(zen_url)
     if parsed_url.netloc != 'zen.yandex.ru':
         return 'Domain must be zen.yandex.ru'
 
@@ -92,14 +95,14 @@ def get_rss():
         )
 
         entry.description(
-            item['content']['preview'].get('snippet').strip()
+            item['content']['preview'].get('snippet').strip()[:limit_description]
         )
 
         if item['content']['preview'].get('image'):
             item_image = json_data['images'].get(
                 item['content']['preview']['image'].get('id')
             )
-    
+
             item_image_url = IMAGE_URL.format(
                 namespace=item_image['namespace'],
                 groupId=item_image['groupId'],
@@ -111,7 +114,7 @@ def get_rss():
                 length='2048'
             )
 
-        # set /media/<nickname> if available, otherwise set /media/id/<uid>
+        # set /media/<nickname> if available, otherwise set /media/id/<publisherId>
         publisher_identity = publisher['nickname'].get('normalized') if 'nickname' in publisher else "id/" + item.get('publisherId')
         entry_url = ENTRY_URL.format(
             publisherId=publisher_identity,
@@ -122,9 +125,10 @@ def get_rss():
         if tg_rhash:
             # write original url into author field
             entry.author({'name': '', 'email': entry_url})
-            entry_url = TG_URL.format(url=quote_plus(entry_url), rhash=tg_rhash)
+            entry.link({'href': TG_URL.format(url=quote_plus(entry_url), rhash=tg_rhash)})
 
-        entry.link({'href': entry_url})
+        else:
+            entry.link({'href': entry_url})
 
         entry.pubdate(
             datetime.fromtimestamp(item['content'].get('modTime') / 1000, tz=timezone.utc)
