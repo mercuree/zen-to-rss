@@ -67,7 +67,7 @@ def get_rss():
     feed = FeedGenerator()
     feed.id('http://zen.yandex.ru/')
     feed.title(publisher.get('name'))
-    feed.subtitle(publisher.get('description'))
+    feed.subtitle(publisher.get('description').strip())
     feed.language('ru')
     feed.author({'name': '-', 'email': '-'})
     feed.link(href=zen_url, rel='alternate')
@@ -88,11 +88,11 @@ def get_rss():
         entry = feed.add_entry()
 
         entry.title(
-            item['content']['preview'].get('title')
+            item['content']['preview'].get('title').strip()
         )
 
         entry.description(
-            item['content']['preview'].get('snippet')
+            item['content']['preview'].get('snippet').strip()
         )
 
         item_image = json_data['images'].get(
@@ -123,9 +123,7 @@ def get_rss():
             entry.author({'name': '', 'email': entry_url})
             entry_url = TG_URL.format(url=quote_plus(entry_url), rhash=tg_rhash)
 
-        entry.link(
-            {'href': entry_url}
-        )
+        entry.link({'href': entry_url})
 
         entry.pubdate(
             datetime.fromtimestamp(item['content'].get('modTime') / 1000, tz=timezone.utc)
