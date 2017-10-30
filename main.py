@@ -42,6 +42,10 @@ def get_rss():
     if parsed_url.netloc != 'zen.yandex.ru':
         return 'Domain must be zen.yandex.ru'
 
+    # validate tg_rhash
+    if tg_rhash and not re.match(r'^[a-fA-F\d]+$', tg_rhash):
+        return 'Invalid tg_rhash. Please, check rhash value from instant view template'
+
     if not re.match(r'^/media/(id/[\da-f]+|[a-z\d_]+)$', parsed_url.path):
         return 'Url is unsupported. Supported formats:<br>' \
                '• https://zen.yandex.ru/media/id/01234567890abcdef0123456 <br>' \
