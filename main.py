@@ -95,20 +95,21 @@ def get_rss():
             item['content']['preview'].get('snippet').strip()
         )
 
-        item_image = json_data['images'].get(
-            item['content']['preview']['image'].get('id')
-        )
-
-        item_image_url = IMAGE_URL.format(
-            namespace=item_image['namespace'],
-            groupId=item_image['groupId'],
-            imageName=item_image['imageName']
-        )
-        entry.enclosure(
-            url=item_image_url,
-            type='image/%s' % item_image['meta']['origFormat'].lower(),
-            length='2048'
-        )
+        if item['content']['preview'].get('image'):
+            item_image = json_data['images'].get(
+                item['content']['preview']['image'].get('id')
+            )
+    
+            item_image_url = IMAGE_URL.format(
+                namespace=item_image['namespace'],
+                groupId=item_image['groupId'],
+                imageName=item_image['imageName']
+            )
+            entry.enclosure(
+                url=item_image_url,
+                type='image/%s' % item_image['meta']['origFormat'].lower(),
+                length='2048'
+            )
 
         # set /media/<nickname> if available, otherwise set /media/id/<uid>
         publisher_identity = publisher['nickname'].get('normalized') if 'nickname' in publisher else "id/" + item.get('publisherId')
