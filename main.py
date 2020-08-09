@@ -59,14 +59,23 @@ def get_rss():
     doc = fromstring(resp.text)
 
     try:
-        text = re.search(r'{.+}', doc.xpath('.//script[contains(text(), "window.__SERVER_STATE__")]')[0].text)[0]
+        text = re.search(r'{.+}', doc.xpath('.//script[contains(text(), "__serverState__")]')[0].text)[0]
         json_data = json.loads(text)
     except:
         return abort(404)
 
-    items = json_data['feed'].get('items')
-    items_order = json_data['feed'].get('itemsOrder')
-    publisher = next(iter(json_data.get('sources').values()))
+    server_state = None
+    for key in json_data:
+        if '__serverState__' in key:
+            server_state = json_data[key]
+            break
+
+    if server_state is None:
+        return abort(404)
+
+    items = server_state['feed'].get('items')
+    items_order = server_state['feed'].get('itemsOrder')
+    publisher = server_state['channel']['source']
 
     feed = FeedGenerator()
     feed.id('http://zen.yandex.ru/')
@@ -83,7 +92,7 @@ def get_rss():
 
     for oItem in items_order:
         item = items.get(oItem)
-        if item.get('type') != 'card':
+        if item.get('type') != 'image_card':
             continue
 
         entry = feed.add_entry()
@@ -115,11 +124,13 @@ def get_rss():
             entry.link({'href': entry_url})
 
         try:
-            entry.pubdate(
+            entry.pubDate(
                 dateparser.parse(item.get('creationTime'), settings={'RETURN_AS_TIMEZONE_AWARE': True})
             )
         except:
             pass
+
+        entry.guid(item.get('id'))
 
     rss_response = Response(feed.rss_str(pretty=True))
     rss_response.headers.set('Content-Type', 'application/rss+xml; charset=utf-8')
